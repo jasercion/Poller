@@ -1,6 +1,17 @@
+extern crate iron;
+extern crate urlencoded;
+extern crate router;
 extern crate serialize;
+#[macro_use] extern crate mime;
 
+use iron::prelude::*;
+use iron::status;
+use router::Router;
+use std::str::FromStr;
+use urlencoded::UrlEncodedBody;
 use serialize::{PrettyEncoder, json, Decodable};
+
+
 
 struct Poll {
     title: String,
@@ -17,5 +28,10 @@ struct Ballot {
 
 
 fn main() {
-    println!("Hello, world!");
+    println!("Starting Slack Polling server on http://localhost:3000...");
+    
+    let mut router = Router::new();
+
+    router.get("/", handle_request, "root");
+    router.post("/", post_response, "post");
 }

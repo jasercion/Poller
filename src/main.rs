@@ -37,5 +37,8 @@ fn main() {
     Iron::new(router).http("localhost:3000").unwrap();
 }
 
+fn handle_request(_request: &mut Request) -> IronResult<Response> {
+   
+};
 
 

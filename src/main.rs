@@ -1,7 +1,7 @@
 extern crate iron;
 extern crate urlencoded;
 extern crate router;
-extern crate serialize;
+extern crate serde;
 #[macro_use] extern crate mime;
 
 use iron::prelude::*;
@@ -9,10 +9,9 @@ use iron::status;
 use router::Router;
 use std::str::FromStr;
 use urlencoded::UrlEncodedBody;
-use serialize::{PrettyEncoder, json, Decodable};
+use serde::{Serialize, Deserialize};
 
-
-
+#[derive(Serialize, Deserialize, Debug)]
 struct Poll {
     title: String,
     options: &mut Vec<String>,
@@ -34,4 +33,9 @@ fn main() {
 
     router.get("/", handle_request, "root");
     router.post("/", post_response, "post");
+
+    Iron::new(router).http("localhost:3000").unwrap();
 }
+
+
+

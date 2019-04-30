@@ -1,11 +1,13 @@
 extern crate url;
+extern crate reqwest;
 
 use std::io::prelude::*;
 use std::net::TcpStream;
 use std::net::TcpListener;
 use url::form_urlencoded;
-
-
+use serde::{Deserialize, Serialize};
+use serde_json::Result;
+use std::collections::HashMap;
 
 /// # Request Struct
 ///
@@ -26,6 +28,11 @@ struct Request {
     user_id: String,
 }
 
+#[derive(Serialize, Deserialize)]
+struct Response {
+    text: String,
+}
+
 /// # handle_connection(mut stream)
 ///
 /// This function parses the incoming TcpStream and stores
@@ -33,6 +40,7 @@ struct Request {
 
 fn handle_connection(mut stream: TcpStream) -> Request {
     let mut buffer = Vec::new();
+
     let mut request = Request {
         command: String::new(),
         text: String::new(),
@@ -56,6 +64,16 @@ fn handle_connection(mut stream: TcpStream) -> Request {
     return request;
 }
 
+fn response_constructor(Request: request) -> Response {
+    let request_text = request.text.split(',').collect();
+
+    let response = Response {
+        text: "This is a test string",
+    };
+
+    return response;
+}
+
 /// # main()
 ///
 /// The `main()` function does the following:
@@ -71,11 +89,21 @@ fn handle_connection(mut stream: TcpStream) -> Request {
 
 fn main() {
     let listener = TcpListener::bind("10.0.0.4:7878").unwrap();
+    let client = reqwest::Client::new();
     
     for stream in listener.incoming() {
         let stream = stream.unwrap();
+
+        // handle_connection returns type `Request`
         let request = handle_connection(stream);
 
+        let response_target = request.response_url;
+        let reponse = response_constructor(request);
+
+        let j = serde_json::to_string(&response);
+
+        client.post(response_target).body(j).send()?;
+        
         println!("Returned Request Struct:\n command: {}, text: {}, response_url: {}, user_id: {}", request.command, request.text, request.response_url, request.user_id);
     }
 }

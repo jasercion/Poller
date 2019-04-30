@@ -7,16 +7,17 @@ use url::form_urlencoded;
 
 
 
-// # Request Struct
-//
-// Created to hold useful infomation
-// extracted from the incoming TcpListener
-// stream.  `command` refers specifically to
-// the slash command which invoked the app while
-// `text` holds any information included after
-// the command input.  The remainder of the
-// information is metadata populated by Slack.
-//
+/// # Request Struct
+///
+/// Created to hold useful infomation
+/// extracted from the incoming TcpListener
+/// stream.
+///
+/// `command`: The slash command which invoked the app
+/// `text`: holds any information included after the command input
+/// `response_url`: url provided by Slack for command response
+/// `user_id`: id of the user which invoked the command
+///
 
 struct Request {
     command: String,
@@ -25,18 +26,12 @@ struct Request {
     user_id: String,
 }
 
+/// # handle_connection(mut stream)
+///
+/// This function parses the incoming TcpStream and stores
+/// relevant data in a new `Request` struct.  
 
-fn main() {
-    let listener = TcpListener::bind("10.0.0.4:7878").unwrap();
-
-    for stream in listener.incoming() {
-        let stream = stream.unwrap();
-
-        handle_connection(stream);
-    }
-}
-
-fn handle_connection(mut stream: TcpStream) {
+fn handle_connection(mut stream: TcpStream) -> Request {
     let mut buffer = Vec::new();
     let mut request = Request {
         command: String::new(),
@@ -44,7 +39,7 @@ fn handle_connection(mut stream: TcpStream) {
         response_url: String::new(),
         user_id: String::new(),
     };
-
+    
     stream.read_to_end(&mut buffer).unwrap();
 
     let post = form_urlencoded::parse(&buffer);
@@ -55,9 +50,32 @@ fn handle_connection(mut stream: TcpStream) {
             "text" => request.text = val.1.to_string(),
             "response_url" => request.response_url = val.1.to_string(),
             "user_id" => request.user_id = val.1.to_string(),
-            _ => println!("No match for {}", val.0),
+            _ => (),
         };
-        
-        println!("({:?}, {:?})\n", val.0, val.1);
+    }
+    return request;
+}
+
+/// # main()
+///
+/// The `main()` function does the following:
+///
+/// 1) binds a TcpListener to a specific port
+/// 2) listens for incoming connections in a `for` loop
+///  
+/// Within the loop subordinate functions are called which
+/// parse the request into a `Request` struct, handle the
+/// requested command, construct a response, and send the
+/// response back to the requesting server.
+///
+
+fn main() {
+    let listener = TcpListener::bind("10.0.0.4:7878").unwrap();
+    
+    for stream in listener.incoming() {
+        let stream = stream.unwrap();
+        let request = handle_connection(stream);
+
+        println!("Returned Request Struct:\n command: {}, text: {}, response_url: {}, user_id: {}", request.command, request.text, request.response_url, request.user_id);
     }
 }

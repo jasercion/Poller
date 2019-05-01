@@ -64,15 +64,15 @@ fn handle_connection(mut stream: TcpStream) -> Request {
     return request;
 }
 
-fn response_constructor(Request: request) -> Response {
-    let request_text = request.text.split(',').collect();
+// fn response_constructor(Request: request) -> Response {
+//     let request_text = request.text.split(',').collect();
 
-    let response = Response {
-        text: "This is a test string",
-    };
+//     let response = Response {
+//         text: "This is a test string",
+//     };
 
-    return response;
-}
+//     return response;
+// }
 
 /// # main()
 ///
@@ -93,10 +93,10 @@ fn main() {
     
     for stream in listener.incoming() {
         match stream {
-            Ok(stream) => {
+            Ok(mut stream) => {
                 let confirmation = "HTTP/1,1 200 OK\n\n\r\n";
                 
-                match stream.write(confirmation) {
+                match stream.write(confirmation.as_bytes()) {
                     Ok(_) => println!("HTTP 200 Confirmation sent!"),
                     Err(e) => println!("Failed sending confirmation: {}", e),
                 }

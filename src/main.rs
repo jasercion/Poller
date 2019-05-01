@@ -28,10 +28,10 @@ struct Request {
     user_id: String,
 }
 
-#[derive(Serialize, Deserialize)]
-struct Response {
-    text: String,
-}
+//#[derive(Serialize, Deserialize)]
+//struct Response {
+//    text: String,
+//}
 
 /// # handle_connection(mut stream)
 ///
@@ -92,18 +92,30 @@ fn main() {
     let client = reqwest::Client::new();
     
     for stream in listener.incoming() {
-        let stream = stream.unwrap();
-
-        // handle_connection returns type `Request`
-        let request = handle_connection(stream);
-
-        let response_target = request.response_url;
-        let reponse = response_constructor(request);
-
-        let j = serde_json::to_string(&response);
-
-        client.post(response_target).body(j).send()?;
-        
-        println!("Returned Request Struct:\n command: {}, text: {}, response_url: {}, user_id: {}", request.command, request.text, request.response_url, request.user_id);
+        match stream {
+            Ok(stream) => {
+                let confirmation = "HTTP/1,1 200 OK\n\n\r\n";
+                
+                match stream.write(confirmation) {
+                    Ok(_) => println!("HTTP 200 Confirmation sent!"),
+                    Err(e) => println!("Failed sending confirmation: {}", e),
+                }
+                
+                // handle_connection returns type `Request`
+                let request = handle_connection(stream);
+                let response_target = request.response_url.as_str();
+                
+                let mut map = HashMap::new();
+                map.insert("text:", "Test Response!");
+                
+                match client.post(response_target).json(&map).send() {
+                    Ok(_) => println!("Message Response Sent to {}!", response_target),
+                    Err(e) => println!("Failed sending message: {}", e),
+                }
+                
+                println!("Returned Request Struct:\n command: {}, text: {}, response_url: {}, user_id: {}", request.command, request.text, request.response_url, request.user_id);
+            },
+            Err(e) => println!("Connection Failed!: {}", e),
+        }
     }
 }
